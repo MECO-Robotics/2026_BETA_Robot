@@ -18,6 +18,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.units.measure.Angle;
@@ -74,6 +75,8 @@ public class PositionJointIOTalonFX implements PositionJointIO {
 
   private double positionSetpoint = 0.0;
   private double velocitySetpoint = 0.0;
+
+  private MotorAlignmentValue motorval;
 
   public PositionJointIOTalonFX(
       String name, PositionJointHardwareConfig config, DoubleSupplier externalFeedforward) {
@@ -212,8 +215,9 @@ public class PositionJointIOTalonFX implements PositionJointIO {
             AlertType.kError);
 
     for (int i = 1; i < config.canIds().length; i++) {
+      motorval = config.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
       motors[i] = new TalonFX(config.canIds()[i], config.canBus());
-      motors[i].setControl(new Follower(i, config.reversed()[i]));
+      motors[i].setControl(new Follower(i, motorval));
 
       motorAlerts[i] =
           new Alert(
@@ -301,7 +305,9 @@ public class PositionJointIOTalonFX implements PositionJointIO {
             .withVelocity(velocity)
             .withFeedForward(externalFeedforward.getAsDouble()));
     for (int i = 1; i < motors.length; i++) {
-      motors[i].setControl(new Follower(motors[0].getDeviceID(), hardwareConfig.reversed()[i]));
+      motorval =
+          hardwareConfig.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
+      motors[i].setControl(new Follower(motors[0].getDeviceID(), motorval));
     }
   }
 
@@ -309,7 +315,9 @@ public class PositionJointIOTalonFX implements PositionJointIO {
   public void setVoltage(double voltage) {
     motors[0].setControl(voltageRequest.withOutput(voltage));
     for (int i = 1; i < motors.length; i++) {
-      motors[i].setControl(new Follower(motors[0].getDeviceID(), hardwareConfig.reversed()[i]));
+      motorval =
+          hardwareConfig.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
+      motors[i].setControl(new Follower(motors[0].getDeviceID(), motorval));
     }
   }
 

@@ -18,6 +18,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -77,6 +78,8 @@ public class AzimuthMotorIOTalonFX implements AzimuthMotorIO {
 
   private final Queue<Double> timestampQueue;
   private final Queue<Double> turnPositionQueue;
+
+  private MotorAlignmentValue motorval;
 
   public AzimuthMotorIOTalonFX(String name, AzimuthMotorHardwareConfig config) {
     this.name = name;
@@ -214,8 +217,9 @@ public class AzimuthMotorIOTalonFX implements AzimuthMotorIO {
             AlertType.kError);
 
     for (int i = 1; i < config.canIds().length; i++) {
+      motorval = config.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
       motors[i] = new TalonFX(config.canIds()[i], config.canBus());
-      motors[i].setControl(new Follower(i, config.reversed()[i]));
+      motors[i].setControl(new Follower(i, motorval));
 
       motorAlerts[i] =
           new Alert(

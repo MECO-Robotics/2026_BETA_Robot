@@ -1,11 +1,14 @@
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.FeetPerSecond;
-import static edu.wpi.first.units.Units.Kilogram;
-import static edu.wpi.first.units.Units.KilogramSquareMeters;
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
 import com.pathplanner.lib.config.ModuleConfig;
@@ -17,10 +20,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.LinearVelocity;
 import frc.robot.subsystems.drive.azimuth_motor.AzimuthMotorConstants;
 import frc.robot.subsystems.drive.drive_motor.DriveMotorConstants;
-import org.ironmaple.simulation.drivesims.COTS;
-import org.ironmaple.simulation.drivesims.SwerveModuleSimulation;
-import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
-import org.ironmaple.simulation.drivesims.configs.SwerveModuleSimulationConfig;
 
 public class DriveConstants {
   public static final double odometryFrequency =
@@ -91,22 +90,24 @@ public class DriveConstants {
   public static final PIDConstants translationPID = new PIDConstants(5, 0, 0);
   public static final PIDConstants rotationPID = new PIDConstants(5, 0, 0);
 
-  public static final DriveTrainSimulationConfig mapleSimConfig =
-      DriveTrainSimulationConfig.Default()
-          .withCustomModuleTranslations(moduleTranslations)
-          .withRobotMass(Kilogram.of(robotMassKg))
-          .withGyro(COTS.ofPigeon2())
-          .withSwerveModule(
-              () ->
-                  new SwerveModuleSimulation(
-                      new SwerveModuleSimulationConfig(
-                          driveGearbox,
-                          turnGearbox,
-                          driveMotorGearRatio,
-                          18.0,
-                          Volts.of(0.1),
-                          Volts.of(0.1),
-                          Meters.of(driveWheelRadiusMeters),
-                          KilogramSquareMeters.of(0.02),
-                          wheelCOF)));
+  // add when maple sim is up
+
+  //   public static final DriveTrainSimulationConfig mapleSimConfig =
+  //       DriveTrainSimulationConfig.Default()
+  //           .withCustomModuleTranslations(moduleTranslations)
+  //           .withRobotMass(Kilogram.of(robotMassKg))
+  //           .withGyro(COTS.ofPigeon2())
+  //           .withSwerveModule(
+  //               () ->
+  //                   new SwerveModuleSimulation(
+  //                       new SwerveModuleSimulationConfig(
+  //                           driveGearbox,
+  //                           turnGearbox,
+  //                           driveMotorGearRatio,
+  //                           18.0,
+  //                           Volts.of(0.1),
+  //                           Volts.of(0.1),
+  //                           Meters.of(driveWheelRadiusMeters),
+  //                           KilogramSquareMeters.of(0.02),
+  //                           wheelCOF)));
 }

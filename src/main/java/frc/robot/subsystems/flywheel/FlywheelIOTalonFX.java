@@ -14,6 +14,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -54,6 +55,8 @@ public class FlywheelIOTalonFX implements FlywheelIO {
   private final Alert[] motorAlerts;
 
   private double velocitySetpoint = 0.0;
+
+  private MotorAlignmentValue motorval;
 
   public FlywheelIOTalonFX(String name, FlywheelHardwareConfig config) {
     this.name = name;
@@ -101,8 +104,9 @@ public class FlywheelIOTalonFX implements FlywheelIO {
             AlertType.kError);
 
     for (int i = 1; i < config.canIds().length; i++) {
+      motorval = config.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
       motors[i] = new TalonFX(config.canIds()[i], config.canBus());
-      motors[i].setControl(new Follower(i, config.reversed()[i]));
+      motors[i].setControl(new Follower(i, motorval));
 
       motorAlerts[i] =
           new Alert(

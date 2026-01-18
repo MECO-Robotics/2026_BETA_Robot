@@ -3,11 +3,11 @@ package frc.robot.subsystems.position_joint;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.revrobotics.PersistMode;
 import com.revrobotics.REVLibError;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.AbsoluteEncoderConfig;
@@ -281,7 +281,7 @@ public class PositionJointIOSparkMax implements PositionJointIO {
 
     motors[0]
         .getClosedLoopController()
-        .setReference(
+        .setSetpoint(
             positionSetpoint,
             ControlType.kPosition,
             ClosedLoopSlot.kSlot0,
@@ -301,7 +301,7 @@ public class PositionJointIOSparkMax implements PositionJointIO {
     feedforward.setGains(gains.kS(), gains.kG(), gains.kV(), gains.kA());
 
     motors[0].configure(
-        leaderConfig.apply(new ClosedLoopConfig().pidf(gains.kP(), gains.kI(), gains.kD(), 0)),
+        leaderConfig.apply(new ClosedLoopConfig().pid(gains.kP(), gains.kI(), gains.kD())),
         ResetMode.kNoResetSafeParameters,
         PersistMode.kNoPersistParameters);
 

@@ -15,6 +15,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -62,6 +63,8 @@ public class DriveMotorIOTalonFX implements DriveMotorIO {
 
   private final Queue<Double> timestampQueue;
   private final Queue<Double> drivePositionQueue;
+
+  private MotorAlignmentValue motorval;
 
   public DriveMotorIOTalonFX(String name, DriveMotorHardwareConfig config) {
     this.name = name;
@@ -113,8 +116,9 @@ public class DriveMotorIOTalonFX implements DriveMotorIO {
             AlertType.kError);
 
     for (int i = 1; i < config.canIds().length; i++) {
+      motorval = config.reversed()[i] ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned;
       motors[i] = new TalonFX(config.canIds()[i], config.canBus());
-      motors[i].setControl(new Follower(i, config.reversed()[i]));
+      motors[i].setControl(new Follower(i, motorval));
 
       motorAlerts[i] =
           new Alert(

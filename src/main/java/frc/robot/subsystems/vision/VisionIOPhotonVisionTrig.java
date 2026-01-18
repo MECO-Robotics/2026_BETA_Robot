@@ -43,6 +43,7 @@ public class VisionIOPhotonVisionTrig implements VisionIO {
 
     for (var result : camera.getAllUnreadResults()) {
       // Update latest target observation
+      // Note: 
       if (result.hasTargets()) {
         inputs.latestTargetObservation =
             new TargetObservation(
@@ -92,7 +93,7 @@ public class VisionIOPhotonVisionTrig implements VisionIO {
                 result.getBestTarget().getPoseAmbiguity(),
                 1,
                 distance,
-                PoseObservationType.PHOTONVISION));
+                PoseObservationType.PHOTONVISIONTRIG));
       } else {
         inputs.latestTargetObservation =
             new TargetObservation(new Rotation2d(), new Rotation2d(), 0);

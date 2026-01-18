@@ -6,22 +6,12 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.DoubleSubscriber;
-import edu.wpi.first.networktables.FloatArraySubscriber;
-import edu.wpi.first.networktables.IntegerPublisher;
-import edu.wpi.first.networktables.IntegerSubscriber;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.PubSubOption;
-import edu.wpi.first.networktables.TimestampedDouble;
-import edu.wpi.first.networktables.TimestampedFloatArray;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.RobotController;
+import gg.questnav.questnav.PoseFrame;
+import gg.questnav.questnav.QuestNav;
 import org.littletonrobotics.junction.Logger;
 
-/** IO implementation for real Limelight hardware. */
 public class VisionIOQuestNav implements VisionIO {
   public record QuestNavData(
       Pose3d pose,
@@ -30,32 +20,7 @@ public class VisionIOQuestNav implements VisionIO {
       float[] translation,
       float[] rotation) {}
 
-  // Configure Network Tables topics (questnav/...) to communicate with the Quest HMD
-  private NetworkTableInstance nt4Instance = NetworkTableInstance.getDefault();
-  private NetworkTable nt4Table = nt4Instance.getTable("questnav");
-  private IntegerSubscriber questMiso = nt4Table.getIntegerTopic("miso").subscribe(0);
-  private IntegerPublisher questMosi =
-      nt4Table
-          .getIntegerTopic("mosi")
-          .publish(PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
-
-  // Subscribe to the Network Tables questnav data topics
-  private DoubleSubscriber questTimestamp = nt4Table.getDoubleTopic("timestamp").subscribe(0.0f);
-  private FloatArraySubscriber questPosition =
-      nt4Table.getFloatArrayTopic("position").subscribe(new float[] {0.0f, 0.0f, 0.0f});
-  private FloatArraySubscriber questAngles =
-      nt4Table.getFloatArrayTopic("eulerAngles").subscribe(new float[] {0.0f, 0.0f, 0.0f});
-  private DoubleSubscriber questBatteryPercent =
-      nt4Table.getDoubleTopic("device/batteryPercent").subscribe(0.0f);
-
-  /** Subscriber for heartbeat requests */
-  private final DoubleSubscriber heartbeatRequestSub =
-      nt4Table.getDoubleTopic("heartbeat/quest_to_robot").subscribe(0.0);
-  /** Publisher for heartbeat responses */
-  private final DoublePublisher heartbeatResponsePub =
-      nt4Table.getDoubleTopic("heartbeat/robot_to_quest").publish();
-  /** Last processed heartbeat request ID */
-  private double lastProcessedHeartbeatId = 0;
+  private QuestNav questNav = new QuestNav();
 
   private final Transform3d robotToCamera;
 
@@ -65,11 +30,11 @@ public class VisionIOQuestNav implements VisionIO {
   private Translation3d[] questNavRawToFieldCoordinateSystemQueue = new Translation3d[15];
   private Translation3d questNavRawToFieldCoordinateSystem = new Translation3d();
 
-  int count = 0;
-  int idx = 0;
-
   protected Rotation3d gyroResetAngle = new Rotation3d();
   protected Pose3d lastPose3d = new Pose3d();
+
+  int count = 0;
+  int idx = 0;
 
   public VisionIOQuestNav(Transform3d robotToCamera, VisionIO absoluteVisionIO) {
     // Initialize the camera to robot transform
@@ -79,9 +44,10 @@ public class VisionIOQuestNav implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs) {
+    questNav.commandPeriodic();
+
     QuestNavData[] questNavData = getQuestNavData();
 
-    // Update the absolute vision IO
     absoluteVisionIO.updateInputs(absoluteInputs);
     Logger.processInputs("QuestNav/absolute", absoluteInputs);
 
@@ -133,97 +99,75 @@ public class VisionIOQuestNav implements VisionIO {
     inputs.tagIds = new int[0];
 
     Logger.recordOutput("QuestNav/battery", getBatteryPercent());
+  }
 
-    cleanUpQuestNavMessages();
-    processHeartbeat();
+  private boolean connected() {
+    return questNav.isConnected();
+  }
+
+  private double getBatteryPercent() {
+    return questNav.getBatteryPercent().orElse(0);
   }
 
   private QuestNavData[] getQuestNavData() {
-    TimestampedDouble[] timestamps = questTimestamp.readQueue();
-    TimestampedFloatArray[] positions = questPosition.readQueue();
-    TimestampedFloatArray[] angles = questAngles.readQueue();
-    // TimestampedDouble[] battery = questBatteryPercent.readQueue();
 
+    PoseFrame[] newFrame = questNav.getAllUnreadPoseFrames();
     double battery = getBatteryPercent();
-
-    int length = Math.min(timestamps.length, Math.min(positions.length, angles.length));
-
+    int length = newFrame.length;
     QuestNavData[] data = new QuestNavData[length];
 
     for (int i = 0; i < length; i++) {
       data[i] =
           new QuestNavData(
-              getQuestNavPose(positions[i].value, angles[i].value).plus(robotToCamera.inverse()),
+              newFrame[i].questPose3d().plus(robotToCamera.inverse()),
               battery,
-              timestamps[i].timestamp,
-              positions[i].value,
-              angles[i].value);
+              newFrame[i].dataTimestamp(),
+              getQuestTranslation(newFrame[i].questPose3d()),
+              getQuestRotation(newFrame[i].questPose3d().getRotation()));
     }
 
     return data;
   }
 
-  // Gets the battery percent of the Quest.
-  private double getBatteryPercent() {
-    return questBatteryPercent.get();
+  private float[] getQuestTranslation(Pose3d pose) {
+    // TODO: Check if translation floats are correct.
+    float xPosition = (float) pose.getX();
+    float yPosition = (float) pose.getY();
+    float zPosition = (float) pose.getZ();
+
+    return new float[] {-yPosition, zPosition, xPosition};
   }
 
-  // Returns if the Quest is connected.
-  private boolean connected() {
-    return ((RobotController.getFPGATime() - questBatteryPercent.getLastChange()) / 1000) < 250;
-  }
+  private float[] getQuestRotation(Rotation3d angle) {
 
-  // Clean up questnav subroutine messages after processing on the headset
-  private void cleanUpQuestNavMessages() {
-    if (questMiso.get() == 99) {
-      questMosi.set(0);
-    }
-  }
+    // TODO: Check if yaw and roll are good when inversed
+    float yaw = (float) -Units.radiansToDegrees(angle.getZ());
+    float pitch = (float) Units.radiansToDegrees(angle.getY());
+    float roll = (float) -Units.radiansToDegrees(angle.getX());
 
-  private Translation3d getQuestNavTranslation(float[] position) {
-    return new Translation3d(position[2], -position[0], position[1]);
-  }
-
-  // Gets the Rotation of the Quest.
-  public Rotation3d getQuestNavRotation(float[] angles) {
-    return new Rotation3d(
-        Units.degreesToRadians(-angles[2]),
-        Units.degreesToRadians(angles[0]),
-        Units.degreesToRadians(-angles[1]));
-  }
-
-  private Pose3d getQuestNavPose(float[] position, float[] angles) {
-    var oculousPositionCompensated = getQuestNavTranslation(position); // 6.5
-    return new Pose3d(oculousPositionCompensated, getQuestNavRotation(angles));
-  }
-
-  /** Process heartbeat requests from Quest and respond with the same ID */
-  public void processHeartbeat() {
-    double requestId = heartbeatRequestSub.get();
-    // Only respond to new requests to avoid flooding
-    if (requestId > 0 && requestId != lastProcessedHeartbeatId) {
-      heartbeatResponsePub.set(requestId);
-      lastProcessedHeartbeatId = requestId;
-    }
+    return new float[] {pitch, yaw, roll};
   }
 
   public void resetPose(Pose3d pose) {
-    questMosi.accept(3);
 
     questNavRawToFieldCoordinateSystem =
         pose.getTranslation()
             .minus(lastPose3d.getTranslation().minus(questNavRawToFieldCoordinateSystem));
+
+    // TODO: clarify if we need to have the robot to camera 
+    questNav.setPose(pose.transformBy(robotToCamera));
 
     count = 0;
     idx = 0;
   }
 
   public void resetHeading(Rotation2d heading) {
-    questMosi.accept(3);
 
     gyroResetAngle =
         (lastPose3d.getRotation().minus(gyroResetAngle).minus(new Rotation3d(heading)))
             .unaryMinus();
+
+    questNav.setPose(new Pose3d(lastPose3d.getTranslation(), new Rotation3d(heading)));
   }
 
   public void resetHeading() {

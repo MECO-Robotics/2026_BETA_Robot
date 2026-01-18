@@ -1,3 +1,10 @@
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose3d;
@@ -9,7 +16,7 @@ public interface VisionIO {
   public static class VisionIOInputs {
     public boolean connected = false;
     public TargetObservation latestTargetObservation =
-        new TargetObservation(new Rotation2d(), new Rotation2d(), 0);
+        new TargetObservation(Rotation2d.kZero, Rotation2d.kZero, 0);
     public PoseObservation[] poseObservations = new PoseObservation[0];
     public int[] tagIds = new int[0];
   }
@@ -30,6 +37,7 @@ public interface VisionIO {
     MEGATAG_1,
     MEGATAG_2,
     PHOTONVISION,
+    PHOTONVISIONTRIG,
     QUESTNAV
   }
 

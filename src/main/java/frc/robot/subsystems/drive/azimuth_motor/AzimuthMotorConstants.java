@@ -2,13 +2,20 @@ package frc.robot.subsystems.drive.azimuth_motor;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import frc.robot.subsystems.drive.DriveConstants;
-import frc.robot.subsystems.position_joint.PositionJointConstants.EncoderType;
 
 public class AzimuthMotorConstants {
   public static final String canBusName = "Drive";
 
   public record AzimuthMotorGains(
       double kP, double kI, double kD, double kS, double kV, double kA) {}
+
+  public enum EncoderType {
+    INTERNAL,
+    EXTERNAL_CANCODER,
+    EXTERNAL_CANCODER_PRO,
+    EXTERNAL_DIO,
+    EXTERNAL_SPARK
+  }
 
   public record AzimuthMotorHardwareConfig(
       int[] canIds,

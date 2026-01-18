@@ -1,3 +1,10 @@
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the LICENSE file
+// at the root directory of this project.
+
 package frc.robot.subsystems.drive.odometry_threads;
 
 import com.ctre.phoenix6.BaseStatusSignal;
@@ -39,7 +46,6 @@ public class PhoenixOdometryThread extends Thread {
   private static boolean isCANFD =
       new CANBus(DriveMotorConstants.canBusName).isNetworkFD()
           || new CANBus(AzimuthMotorConstants.canBusName).isNetworkFD();
-
   private static PhoenixOdometryThread instance = null;
 
   public static PhoenixOdometryThread getInstance() {
@@ -131,8 +137,8 @@ public class PhoenixOdometryThread extends Thread {
       Drive.odometryLock.lock();
       try {
         // Sample timestamp is current FPGA time minus average CAN latency
-        //     Default timestamps from Phoenix are NOT compatible with
-        //     FPGA timestamps, this solution is imperfect but close
+        // Default timestamps from Phoenix are NOT compatible with
+        // FPGA timestamps, this solution is imperfect but close
         double timestamp = RobotController.getFPGATime() / 1e6;
         double totalLatency = 0.0;
         for (BaseStatusSignal signal : phoenixSignals) {

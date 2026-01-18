@@ -2,11 +2,11 @@ package frc.robot.subsystems.drive.drive_motor;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 
+import com.revrobotics.PersistMode;
 import com.revrobotics.REVLibError;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig;
@@ -140,7 +140,7 @@ public class DriveMotorIOSparkMax implements DriveMotorIO {
 
     motors[0]
         .getClosedLoopController()
-        .setReference(
+        .setSetpoint(
             velocitySetpoint,
             ControlType.kVelocity,
             ClosedLoopSlot.kSlot0,
