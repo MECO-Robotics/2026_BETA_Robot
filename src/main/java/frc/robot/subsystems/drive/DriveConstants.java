@@ -29,8 +29,8 @@ public class DriveConstants {
           : 100.0; // If both Azimuth and Drive use CANFD, sample odometry at 250 Hz, if either loop
   // is not FD, sample odometry at 100 Hz
 
-  public static final double trackWidth = Units.inchesToMeters(26.5);
-  public static final double wheelBase = Units.inchesToMeters(26.5);
+  public static final double trackWidth = Units.inchesToMeters(22);
+  public static final double wheelBase = Units.inchesToMeters(22);
   public static final double driveBaseRadius = Math.hypot(wheelBase / 2.0, wheelBase / 2.0);
   public static final double driveWheelRadiusMeters = Units.inchesToMeters(2);
   public static final Translation2d[] moduleTranslations =
@@ -89,6 +89,11 @@ public class DriveConstants {
 
   public static final PIDConstants translationPID = new PIDConstants(5, 0, 0);
   public static final PIDConstants rotationPID = new PIDConstants(5, 0, 0);
+
+  // Robot dimensions
+  public static final double robotLength = Units.inchesToMeters(27.5);
+  public static final double robotWidth = Units.inchesToMeters(27.5);
+  public static final double robotHeight = Units.inchesToMeters(27.5);
 
   // add when maple sim is up
 
